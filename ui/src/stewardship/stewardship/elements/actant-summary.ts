@@ -43,15 +43,10 @@ export class ActantSummary extends LitElement {
     return html`
       <div style="display: flex; flex-direction: column">
         <h2>${entryRecord.entry.name}</h2>
-          
-          ${entryRecord.entry.agents.map(
-            el =>
-              html`<span style="white-space: pre-line"
-                ><agent-avatar .agentPubKey=${el}></agent-avatar
-              ></span>`
-          )}
-        
-       
+
+        ${entryRecord.entry.agents.map(
+          el => html`<agent-avatar .agentPubKey=${el}></agent-avatar>`
+        )}
       </div>
     `;
   }

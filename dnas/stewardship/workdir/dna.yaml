@@ -1,0 +1,28 @@
+---
+manifest_version: "1"
+name: stewardship
+integrity:
+  network_seed: ~
+  properties: ~
+  origin_time: 1696082321935331
+  zomes:
+    - name: profiles_integrity
+      hash: ~
+      bundled: "../../../target/wasm32-unknown-unknown/release/profiles_integrity.wasm"
+      dependencies: ~
+    - name: stewardship_integrity
+      hash: ~
+      bundled: "../../../target/wasm32-unknown-unknown/release/stewardship_integrity.wasm"
+      dependencies: ~
+coordinator:
+  zomes:
+    - name: profiles
+      hash: ~
+      bundled: "../../../target/wasm32-unknown-unknown/release/profiles.wasm"
+      dependencies:
+        - name: profiles_integrity
+    - name: stewardship
+      hash: ~
+      bundled: "../../../target/wasm32-unknown-unknown/release/stewardship.wasm"
+      dependencies:
+        - name: stewardship_integrity

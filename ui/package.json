@@ -28,6 +28,7 @@
     "@esbuild-plugins/node-globals-polyfill": "^0.2.3",
     "@lit/localize-tools": "^0.6.3",
     "@open-wc/eslint-config": "^4.3.0",
+    "@rollup/plugin-inject": "^5.0.3",
     "@trivago/prettier-plugin-sort-imports": "^3.4.0",
     "@typescript-eslint/eslint-plugin": "^5.43.0",
     "@typescript-eslint/parser": "^5.43.0",

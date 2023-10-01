@@ -62,6 +62,12 @@ export class HolochainApp extends LitElement {
 
   _myProfile!: StoreSubscriber<AsyncStatus<Profile | undefined>>;
 
+  @state()
+  showCreateClause = false
+  
+  @state()
+  showCreateActant = false
+
   async firstUpdated() {
     this._client = await AppAgentWebsocket.connect('', 'stewardship');
 
@@ -130,12 +136,37 @@ export class HolochainApp extends LitElement {
         >
       </sl-dialog>
       ${this.showDetail ? html`` : ``}
-      <div>
-        <create-actant></create-actant>
+      <div style="min-width:400px;margin:10px">
+        <h2>Actants</h2>
+        ${this.showCreateActant ?
+          html`<create-actant
+            @cancel=${()=>{this.showCreateActant = false}}
+          ></create-actant>`
+          :
+        html`
+        <sl-button
+          variant="primary"
+          @click=${() => {
+            this.showCreateActant = true
+          }}
+          >Create Actant</sl-button>`  }
+        
         <all-actants></all-actants>
       </div>
-      <div>
-        <create-clause></create-clause>
+      <div style="min-width:400px;margin:10px">
+      <h2>Clauses</h2>
+        ${this.showCreateClause ?
+          html`<create-clause
+            @cancel=${()=>{this.showCreateClause = false}}
+          ></create-clause>`
+          :
+        html`
+        <sl-button
+          variant="primary"
+          @click=${() => {
+            this.showCreateClause = true
+          }}
+          >Create Clause</sl-button>`  }
         <all-clauses
           @clause-selected=${(e: CustomEvent) => {
             this.clauseDialog.show();

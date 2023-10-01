@@ -100,7 +100,13 @@ export class CreateActant extends LitElement {
 
   render() {
     return html` <sl-card style="flex: 1;">
-      <span slot="header">${msg('Create Actant')}</span>
+      <span slot="header">${msg('Create Actant')}
+      <sl-button @click=${()=>
+        this.dispatchEvent(
+          new CustomEvent('cancel')
+        )}
+          >${msg('close')}</sl-button>
+      </span>
 
       <form
         id="create-form"
@@ -151,8 +157,7 @@ export class CreateActant extends LitElement {
         </div>
 
         <sl-button variant="primary" type="submit" .loading=${this.committing}
-          >${msg('Create Actant')}</sl-button
-        >
+          >${msg('Create Actant')}</sl-button>
       </form>
     </sl-card>`;
   }

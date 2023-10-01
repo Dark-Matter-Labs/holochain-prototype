@@ -200,7 +200,13 @@ export class CreateClause extends LitElement {
 
   render() {
     return html` <sl-card style="flex: 1;">
-      <span slot="header">${msg('Create Clause')}</span>
+      <span slot="header">${msg('Create Clause')}
+        <sl-button @click=${()=>
+          this.dispatchEvent(
+            new CustomEvent('cancel')
+          )}
+            >${msg('close')}</sl-button>
+      </span>
 
       <form
         id="create-form"

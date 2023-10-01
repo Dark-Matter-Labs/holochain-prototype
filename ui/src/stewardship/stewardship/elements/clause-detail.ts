@@ -5,7 +5,7 @@ import {
   wrapPathInSvg,
 } from '@holochain-open-dev/elements';
 import '@holochain-open-dev/elements/dist/elements/display-error.js';
-import { StoreSubscriber } from '@holochain-open-dev/stores';
+import { StoreSubscriber, toPromise } from '@holochain-open-dev/stores';
 import { EntryRecord } from '@holochain-open-dev/utils';
 import { ActionHash, EntryHash, Record } from '@holochain/client';
 import { consume } from '@lit-labs/context';
@@ -23,6 +23,8 @@ import { customElement, property, state } from 'lit/decorators.js';
 import { stewardshipStoreContext } from '../context.js';
 import { StewardshipStore } from '../stewardship-store.js';
 import { Clause } from '../types.js';
+import { repeat } from 'lit/directives/repeat.js';
+import { until } from 'lit/directives/until.js';
 
 /**
  * @element clause-detail
@@ -67,6 +69,15 @@ export class ClauseDetail extends LitElement {
     }
   }
 
+  actantName(hash: ActionHash){
+    const name = toPromise(this.stewardshipStore.actants.get(hash)).then(
+      actantRecord => 
+         actantRecord?.entry.name
+      
+    );
+    return html`${until(name, html`unknown...`)}`;
+  }
+
   renderDetail(entryRecord: EntryRecord<Clause>) {
     return html`<sl-card>
       <div slot="header" style="display: flex; flex-direction: row">
@@ -87,6 +98,23 @@ export class ClauseDetail extends LitElement {
           <span style="white-space: pre-line"
             >${entryRecord.entry.statement}</span
           >
+          <span style="margin-bottom: 8px"
+            ><strong>${msg('Responsiblity Holders')}</strong></span
+          >
+          <span style="white-space: pre-line"
+            >${repeat(entryRecord.entry.responsibilty_holders,(i)=>i,(item:ActionHash,index:number)=>
+              html`${this.actantName(item)}`
+            )}</span
+          >
+          <span style="margin-bottom: 8px"
+            ><strong>${msg('Rights Holders')}</strong></span
+          >
+          <span style="white-space: pre-line"
+            >${repeat(entryRecord.entry.right_holders,(i)=>i,(item:ActionHash,index:number)=>
+              html`${this.actantName(item)}`
+            )}</span
+          >
+
         </div>
       </div>
     </sl-card> `;

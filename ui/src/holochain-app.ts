@@ -14,15 +14,17 @@ import {
   ActionHash,
   AppAgentClient,
   AppAgentWebsocket,
+  encodeHashToBase64,
 } from '@holochain/client';
 import { provide } from '@lit-labs/context';
 import { localized, msg } from '@lit/localize';
 import '@shoelace-style/shoelace/dist/components/icon-button/icon-button.js';
 import '@shoelace-style/shoelace/dist/components/spinner/spinner.js';
+import '@shoelace-style/shoelace/dist/components/dialog/dialog.js';
 // Replace 'ligth.css' with 'dark.css' if you want the dark theme
 import '@shoelace-style/shoelace/dist/themes/light.css';
 import { LitElement, css, html } from 'lit';
-import { customElement, property, state } from 'lit/decorators.js';
+import { customElement, property, query, state } from 'lit/decorators.js';
 
 import { stewardshipStoreContext } from './stewardship/stewardship/context.js';
 import './stewardship/stewardship/elements/all-actants.js';
@@ -30,8 +32,10 @@ import './stewardship/stewardship/elements/all-clauses.js';
 import './stewardship/stewardship/elements/create-actant.js';
 import './stewardship/stewardship/elements/create-clause.js';
 import './stewardship/stewardship/elements/create-report.js';
+import './stewardship/stewardship/elements/clause-detail.js';
 import { StewardshipClient } from './stewardship/stewardship/stewardship-client.js';
 import { StewardshipStore } from './stewardship/stewardship/stewardship-store.js';
+import SlDialog from '@shoelace-style/shoelace/dist/components/dialog/dialog.js';
 
 type View = { view: 'main' };
 
@@ -45,6 +49,9 @@ export class HolochainApp extends LitElement {
   @state() _loading = true;
 
   @state() _view = { view: 'main' };
+
+  @query("#clause-dialog")
+  clauseDialog!: SlDialog
 
   @provide({ context: profilesStoreContext })
   @property()
@@ -101,17 +108,32 @@ export class HolochainApp extends LitElement {
     }
   }
 
+  @state()
+  showDetail: ActionHash|undefined
+
   // TODO: add here the content of your application
   renderContent() {
     return html`
+    <sl-dialog id="clause-dialog" class="dialog-deny-close">
+      
+      ${this.showDetail ? html`<clause-detail .clauseHash=${this.showDetail}></clause-detail>`:`none`}
+      
+      <sl-button slot="footer" variant="primary" @click=${()=>{this.clauseDialog.hide()}}>Close</sl-button>
+    </sl-dialog>
+    ${this.showDetail ? html`
+      
+` : ``}
       <div>
         <create-actant></create-actant>
         <all-actants></all-actants>
       </div>
       <div>
         <create-clause></create-clause>
-        <create-report></create-report>
-        <all-clauses></all-clauses>
+        <all-clauses
+        @clause-selected=${(e:CustomEvent)=>{
+          this.clauseDialog.show()
+          this.showDetail = e.detail.clauseHash
+        }}></all-clauses>
       </div>
     `;
   }

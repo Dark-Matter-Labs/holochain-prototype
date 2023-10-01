@@ -40,42 +40,13 @@ export class ClauseSummary extends LitElement {
     this.stewardshipStore.clauses.get(this.clauseHash)
   );
 
-  actantName(hash: ActionHash){
-    const name = toPromise(this.stewardshipStore.actants.get(hash)).then(
-      actantRecord => 
-         actantRecord?.entry.name
-      
-    );
-    return html`${until(name, html`unknown...`)}`;
-  }
-
   renderSummary(entryRecord: EntryRecord<Clause>) {
     return html`
-      <div style="display: flex; flex-direction: column">
-        <div style="display: flex; flex-direction: column; margin-bottom: 16px">
-          <span style="margin-bottom: 8px"
-            ><strong>${msg('Statement')}</strong></span
-          >
-          <span style="white-space: pre-line"
-            >${entryRecord.entry.statement}</span
-          >
-          <span style="margin-bottom: 8px"
-            ><strong>${msg('Responsiblity Holders')}</strong></span
-          >
-          <span style="white-space: pre-line"
-            >${repeat(entryRecord.entry.responsibilty_holders,(i)=>i,(item:ActionHash,index:number)=>
-              html`${this.actantName(item)}`
-            )}</span
-          >
-          <span style="margin-bottom: 8px"
-            ><strong>${msg('Rights Holders')}</strong></span
-          >
-          <span style="white-space: pre-line"
-            >${repeat(entryRecord.entry.right_holders,(i)=>i,(item:ActionHash,index:number)=>
-              html`${this.actantName(item)}`
-            )}</span
-          >
-        </div>
+      <div 
+        style="display: flex; flex-direction: column">
+        <h3 style=""
+            >${entryRecord.entry.title}</h3>
+
       </div>
     `;
   }

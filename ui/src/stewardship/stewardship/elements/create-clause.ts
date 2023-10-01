@@ -157,15 +157,16 @@ export class CreateClause extends LitElement {
     const checkbox = toPromise(this.stewardshipStore.actants.get(hash)).then(
       actantRecord => {
         const hashStr = encodeHashToBase64(hash);
+        const id = `${holderType}-${hash}`;
         console.log('checked', this.selectedRightHolders[hashStr]);
         return html`<input
             type="checkbox"
-            id=${hashStr}
+            id=${id}
             name=${actantRecord?.entry.name}
             ${this.selectedRightHolders[hashStr] ? `checked` : ''}
             @change=${() => this.handleCheckboxChange(holderType, hashStr)}
           />
-          <label for=${hashStr}>${actantRecord?.entry.name}</label><br />`;
+          <label for=${id}>${actantRecord?.entry.name}</label><br />`;
       }
     );
     return html`${until(checkbox, html`<span>Loading...</span>`)}`;
@@ -207,11 +208,7 @@ export class CreateClause extends LitElement {
         ${onSubmit(fields => this.createClause(fields))}
       >
         <div style="margin-bottom: 16px;">
-          <sl-textarea
-            name="title"
-            .label=${msg('Title')}
-            required
-          ></sl-textarea>
+          <sl-input name="title" .label=${msg('Title')} required></sl-input>
         </div>
         <div style="margin-bottom: 16px;">
           <sl-textarea

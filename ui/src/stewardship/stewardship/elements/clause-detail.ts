@@ -25,6 +25,8 @@ import { StewardshipStore } from '../stewardship-store.js';
 import { Clause } from '../types.js';
 import { repeat } from 'lit/directives/repeat.js';
 import { until } from 'lit/directives/until.js';
+import './create-report.js';
+import './reports-for-clause.js';
 
 /**
  * @element clause-detail
@@ -116,6 +118,9 @@ export class ClauseDetail extends LitElement {
           >
 
         </div>
+        <create-report .clauseHash=${this.clauseHash}></create-report>
+        <reports-for-clause .clauseHash=${this.clauseHash}></reports-for-clause>
+        
       </div>
     </sl-card> `;
   }

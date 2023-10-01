@@ -31,7 +31,7 @@ import '@shoelace-style/shoelace/dist/components/button/button.js';
 import '@shoelace-style/shoelace/dist/components/card/card.js';
 import '@shoelace-style/shoelace/dist/components/icon-button/icon-button.js';
 import '@shoelace-style/shoelace/dist/components/icon/icon.js';
-import SlSelect from '@shoelace-style/shoelace/dist/components/select/select.js';
+// import SlSelect from '@shoelace-style/shoelace/dist/components/select/select.js';
 import '@shoelace-style/shoelace/dist/components/select/select.js';
 import '@shoelace-style/shoelace/dist/components/textarea/textarea.js';
 import { LitElement, html } from 'lit';
@@ -43,6 +43,8 @@ import { stewardshipStoreContext } from '../context.js';
 import { StewardshipStore } from '../stewardship-store.js';
 import { Actant, Clause } from '../types.js';
 
+type HolderType = 'right-holders' | 'responsibility-holders';
+
 /**
  * @element create-clause
  * @fires clause-created: detail will contain { clauseHash }
@@ -50,10 +52,6 @@ import { Actant, Clause } from '../types.js';
 @localized()
 @customElement('create-clause')
 export class CreateClause extends LitElement {
-  // REQUIRED. The responsibilty holders for this Clause
-  @property()
-  responsibiltyHolders!: Array<ActionHash>;
-
   /**
    * @internal
    */
@@ -77,6 +75,9 @@ export class CreateClause extends LitElement {
   @state()
   selectedRightHolders: { [hash: string]: boolean } = {};
 
+  @state()
+  selectedResponsibilityHolders: { [hash: string]: boolean } = {};
+
   /**
    * @internal
    */
@@ -89,22 +90,17 @@ export class CreateClause extends LitElement {
   @query('#create-form')
   form!: HTMLFormElement;
 
-  @query('#right-holders')
-  rightHoldersSelect!: SlSelect;
-
   async createClause(fields: any) {
-    if (this.responsibiltyHolders === undefined)
-      throw new Error(
-        'Cannot create a new Clause without its responsibilty_holders field'
-      );
-
     const right_holders = Object.keys(this.selectedRightHolders).map(hashStr =>
       decodeHashFromBase64(hashStr)
     );
+    const responsibilty_holders = Object.keys(
+      this.selectedResponsibilityHolders
+    ).map(hashStr => decodeHashFromBase64(hashStr));
     const clause: Clause = {
       statement: fields.statement,
       right_holders,
-      responsibilty_holders: this.responsibiltyHolders,
+      responsibilty_holders,
     };
 
     try {
@@ -130,12 +126,22 @@ export class CreateClause extends LitElement {
     this.committing = false;
   }
 
-  handleCheckboxChange(hashStr: string) {
-    this.selectedRightHolders[hashStr] = !this.selectedRightHolders[hashStr];
-    console.log(this.selectedRightHolders);
+  handleCheckboxChange(holderType: HolderType, hashStr: string) {
+    switch (holderType) {
+      case 'right-holders': {
+        this.selectedRightHolders[hashStr] =
+          !this.selectedRightHolders[hashStr];
+        break;
+      }
+      case 'responsibility-holders': {
+        this.selectedResponsibilityHolders[hashStr] =
+          !this.selectedResponsibilityHolders[hashStr];
+        break;
+      }
+    }
   }
 
-  renderOption(hash: ActionHash) {
+  renderOption(holderType: HolderType, hash: ActionHash) {
     // TODO: !?!?!?
     // const optionProm = toPromise(this.stewardshipStore.actants.get(hash)).then(
     //   actantRecord =>
@@ -156,7 +162,7 @@ export class CreateClause extends LitElement {
             id=${hashStr}
             name=${actantRecord?.entry.name}
             ${this.selectedRightHolders[hashStr] ? `checked` : ''}
-            @change=${() => this.handleCheckboxChange(hashStr)}
+            @change=${() => this.handleCheckboxChange(holderType, hashStr)}
           />
           <label for=${hashStr}>${actantRecord?.entry.name}</label><br />`;
       }
@@ -164,18 +170,16 @@ export class CreateClause extends LitElement {
     return html`${until(checkbox, html`<span>Loading...</span>`)}`;
   }
 
-  handleChange() {
-    console.log(this.rightHoldersSelect.value);
-  }
-
-  renderActantSelect() {
+  renderActantSelect(holderType: HolderType) {
     console.log(this._allActants.value.status);
     switch (this._allActants.value.status) {
       case 'pending':
         return html`<span>loading...</span>`;
       case 'complete': {
         const actantHahses = this._allActants.value.value;
-        const options = actantHahses.map(hash => this.renderOption(hash));
+        const options = actantHahses.map(hash =>
+          this.renderOption(holderType, hash)
+        );
         return options;
         // TODO: why doesn't this work!?
         // return html` <sl-select
@@ -208,7 +212,14 @@ export class CreateClause extends LitElement {
             required
           ></sl-textarea>
         </div>
-        <div style="margin-bottom: 16px;">${this.renderActantSelect()}</div>
+        <div style="margin-bottom: 16px;">
+          <h4>Right Holders</h4>
+          ${this.renderActantSelect('right-holders')}
+        </div>
+        <div style="margin-bottom: 16px;">
+          <h4>Responsibility Holders</h4>
+          ${this.renderActantSelect('responsibility-holders')}
+        </div>
 
         <sl-button variant="primary" type="submit" .loading=${this.committing}
           >${msg('Create Clause')}</sl-button

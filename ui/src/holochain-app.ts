@@ -109,10 +109,7 @@ export class HolochainApp extends LitElement {
         <all-actants></all-actants>
       </div>
       <div>
-        <create-clause
-          .rightHolders=${[]}
-          .responsibiltyHolders=${[]}
-        ></create-clause>
+        <create-clause></create-clause>
         <create-report></create-report>
         <all-clauses></all-clauses>
       </div>

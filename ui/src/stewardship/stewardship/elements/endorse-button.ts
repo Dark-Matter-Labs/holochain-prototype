@@ -4,7 +4,7 @@ import {
   sharedStyles,
 } from '@holochain-open-dev/elements';
 import '@holochain-open-dev/elements/dist/elements/display-error.js';
-import { StoreSubscriber } from '@holochain-open-dev/stores';
+import { StoreSubscriber, toPromise } from '@holochain-open-dev/stores';
 import { EntryRecord } from '@holochain-open-dev/utils';
 import { ActionHash } from '@holochain/client';
 import { consume } from '@lit-labs/context';
@@ -16,6 +16,7 @@ import '@shoelace-style/shoelace/dist/components/icon-button/icon-button.js';
 import '@shoelace-style/shoelace/dist/components/icon/icon.js';
 import { LitElement, html } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
+import { until } from 'lit/directives/until.js';
 
 import { stewardshipStoreContext } from '../context.js';
 import { StewardshipStore } from '../stewardship-store.js';
@@ -87,16 +88,24 @@ export class EndorseButton extends LitElement {
     this.committing = false;
   }
 
-  renderContent(endorsementHashes: ActionHash[]) {
-    const hasEndorsement = !!endorsementHashes.length;
-    if (hasEndorsement) {
-      return html`<h4>Endorsed</h4>`;
-    }
-    return html`<sl-button
-      @click=${this.createEndorsement}
-      .disable=${this.committing}
-      >Endorse</sl-button
-    >`;
+  async renderContentAsync(endorsementHashes: ActionHash[]) {
+    const records = await Promise.all(
+      endorsementHashes.map(hash =>
+        toPromise(this.stewardshipStore.endorsements.get(hash))
+      )
+    );
+    const myPubKey = this.stewardshipStore.client.client.myPubKey.toString();
+    const userHasEndorsed = records.some(
+      record => record?.action.author.toString() === myPubKey
+    );
+    return html`<h4>${records.length ?? 0} Endorsement(s)</h4>
+      ${userHasEndorsed
+        ? ''
+        : html`<sl-button
+            @click=${this.createEndorsement}
+            .disable=${this.committing}
+            >Endorse</sl-button
+          >`}`;
   }
 
   render() {
@@ -104,7 +113,9 @@ export class EndorseButton extends LitElement {
       case 'pending':
         return html`<span>Loading...</span>`;
       case 'complete':
-        return this.renderContent(this._existingEndorsementHashes.value.value);
+        return until(
+          this.renderContentAsync(this._existingEndorsementHashes.value.value)
+        );
       case 'error':
         return html` <display-error
           .headline=${msg('Error fetching the endorsements for report')}

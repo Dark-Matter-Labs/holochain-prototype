@@ -40,18 +40,32 @@ export class ClauseSummary extends LitElement {
     this.stewardshipStore.clauses.get(this.clauseHash)
   );
 
+    _reports = new StoreSubscriber(this, () =>
+    this.stewardshipStore.reportsForClause.get(this.clauseHash)
+  );
+
   renderSummary(entryRecord: EntryRecord<Clause>) {
     return html`
       <div 
         style="display: flex; flex-direction: column">
         <h3 style=""
             >${entryRecord.entry.title}</h3>
-
+        ${this.reportsCount>0 ? html`
+        <span>Reports: ${this.reportsCount}</span>
+        `:``}
       </div>
     `;
   }
 
+  @state()
+  reportsCount = 0
+
+
   renderClause() {
+    switch (this._reports.value.status) {
+      case 'complete':
+        this.reportsCount = this._reports.value.value.length
+    }
     switch (this._clause.value.status) {
       case 'pending':
         return html`<div

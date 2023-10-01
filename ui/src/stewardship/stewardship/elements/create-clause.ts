@@ -7,6 +7,11 @@ import {
   wrapPathInSvg,
 } from '@holochain-open-dev/elements';
 import '@holochain-open-dev/elements/dist/elements/display-error.js';
+import {
+  AsyncStatus,
+  StoreSubscriber,
+  toPromise,
+} from '@holochain-open-dev/stores';
 import { EntryRecord } from '@holochain-open-dev/utils';
 import {
   ActionHash,
@@ -14,6 +19,8 @@ import {
   DnaHash,
   EntryHash,
   Record,
+  decodeHashFromBase64,
+  encodeHashToBase64,
 } from '@holochain/client';
 import { consume } from '@lit-labs/context';
 import { localized, msg } from '@lit/localize';
@@ -24,14 +31,17 @@ import '@shoelace-style/shoelace/dist/components/button/button.js';
 import '@shoelace-style/shoelace/dist/components/card/card.js';
 import '@shoelace-style/shoelace/dist/components/icon-button/icon-button.js';
 import '@shoelace-style/shoelace/dist/components/icon/icon.js';
+import SlSelect from '@shoelace-style/shoelace/dist/components/select/select.js';
+import '@shoelace-style/shoelace/dist/components/select/select.js';
 import '@shoelace-style/shoelace/dist/components/textarea/textarea.js';
 import { LitElement, html } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
 import { repeat } from 'lit/directives/repeat.js';
+import { until } from 'lit/directives/until.js';
 
 import { stewardshipStoreContext } from '../context.js';
 import { StewardshipStore } from '../stewardship-store.js';
-import { Clause } from '../types.js';
+import { Actant, Clause } from '../types.js';
 
 /**
  * @element create-clause
@@ -40,10 +50,6 @@ import { Clause } from '../types.js';
 @localized()
 @customElement('create-clause')
 export class CreateClause extends LitElement {
-  // REQUIRED. The right holders for this Clause
-  @property()
-  rightHolders!: Array<ActionHash>;
-
   // REQUIRED. The responsibilty holders for this Clause
   @property()
   responsibiltyHolders!: Array<ActionHash>;
@@ -57,6 +63,23 @@ export class CreateClause extends LitElement {
   /**
    * @internal
    */
+  _allActants = new StoreSubscriber(
+    this,
+    () => this.stewardshipStore.allActants
+  );
+
+  // _storeSubscribers: {
+  //   [hash: string]:
+  //     | StoreSubscriber<AsyncStatus<EntryRecord<Actant> | undefined>>
+  //     | undefined;
+  // } = {};
+
+  @state()
+  selectedRightHolders: { [hash: string]: boolean } = {};
+
+  /**
+   * @internal
+   */
   @state()
   committing = false;
 
@@ -66,19 +89,21 @@ export class CreateClause extends LitElement {
   @query('#create-form')
   form!: HTMLFormElement;
 
+  @query('#right-holders')
+  rightHoldersSelect!: SlSelect;
+
   async createClause(fields: any) {
-    if (this.rightHolders === undefined)
-      throw new Error(
-        'Cannot create a new Clause without its right_holders field'
-      );
     if (this.responsibiltyHolders === undefined)
       throw new Error(
         'Cannot create a new Clause without its responsibilty_holders field'
       );
 
+    const right_holders = Object.keys(this.selectedRightHolders).map(hashStr =>
+      decodeHashFromBase64(hashStr)
+    );
     const clause: Clause = {
       statement: fields.statement,
-      right_holders: this.rightHolders,
+      right_holders,
       responsibilty_holders: this.responsibiltyHolders,
     };
 
@@ -105,6 +130,68 @@ export class CreateClause extends LitElement {
     this.committing = false;
   }
 
+  handleCheckboxChange(hashStr: string) {
+    this.selectedRightHolders[hashStr] = !this.selectedRightHolders[hashStr];
+    console.log(this.selectedRightHolders);
+  }
+
+  renderOption(hash: ActionHash) {
+    // TODO: !?!?!?
+    // const optionProm = toPromise(this.stewardshipStore.actants.get(hash)).then(
+    //   actantRecord =>
+    //     html`<sl-option value=${encodeHashToBase64(hash)}
+    //       >${actantRecord?.entry.name}</sl-option
+    //     >`
+    // );
+    // return html`${until(
+    //   optionProm,
+    //   html`<sl-option value=${encodeHashToBase64(hash)}>Loading...</sl-option>`
+    // )}`;
+    const checkbox = toPromise(this.stewardshipStore.actants.get(hash)).then(
+      actantRecord => {
+        const hashStr = encodeHashToBase64(hash);
+        console.log('checked', this.selectedRightHolders[hashStr]);
+        return html`<input
+            type="checkbox"
+            id=${hashStr}
+            name=${actantRecord?.entry.name}
+            ${this.selectedRightHolders[hashStr] ? `checked` : ''}
+            @change=${() => this.handleCheckboxChange(hashStr)}
+          />
+          <label for=${hashStr}>${actantRecord?.entry.name}</label><br />`;
+      }
+    );
+    return html`${until(checkbox, html`<span>Loading...</span>`)}`;
+  }
+
+  handleChange() {
+    console.log(this.rightHoldersSelect.value);
+  }
+
+  renderActantSelect() {
+    console.log(this._allActants.value.status);
+    switch (this._allActants.value.status) {
+      case 'pending':
+        return html`<span>loading...</span>`;
+      case 'complete': {
+        const actantHahses = this._allActants.value.value;
+        const options = actantHahses.map(hash => this.renderOption(hash));
+        return options;
+        // TODO: why doesn't this work!?
+        // return html` <sl-select
+        //   id="right-holders"
+        //   name="Right holders"
+        //   .label=${msg('Right Holders')}
+        //   required
+        //   @sl-change=${this.handleChange}
+        // >
+        //   ${options}
+        // </sl-select>`;
+      }
+    }
+    // this._allActants.value.status
+  }
+
   render() {
     return html` <sl-card style="flex: 1;">
       <span slot="header">${msg('Create Clause')}</span>
@@ -121,6 +208,7 @@ export class CreateClause extends LitElement {
             required
           ></sl-textarea>
         </div>
+        <div style="margin-bottom: 16px;">${this.renderActantSelect()}</div>
 
         <sl-button variant="primary" type="submit" .loading=${this.committing}
           >${msg('Create Clause')}</sl-button

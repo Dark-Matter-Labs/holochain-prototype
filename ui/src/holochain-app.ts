@@ -29,6 +29,7 @@ import './stewardship/stewardship/elements/all-actants.js';
 import './stewardship/stewardship/elements/all-clauses.js';
 import './stewardship/stewardship/elements/create-actant.js';
 import './stewardship/stewardship/elements/create-clause.js';
+import './stewardship/stewardship/elements/create-report.js';
 import { StewardshipClient } from './stewardship/stewardship/stewardship-client.js';
 import { StewardshipStore } from './stewardship/stewardship/stewardship-store.js';
 
@@ -112,6 +113,7 @@ export class HolochainApp extends LitElement {
           .rightHolders=${[]}
           .responsibiltyHolders=${[]}
         ></create-clause>
+        <create-report></create-report>
         <all-clauses></all-clauses>
       </div>
     `;

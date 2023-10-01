@@ -13,6 +13,7 @@ import { customElement, property, state } from 'lit/decorators.js';
 import { stewardshipStoreContext } from '../context';
 import { StewardshipStore } from '../stewardship-store';
 import { Report } from '../types';
+import './endorse-button.js';
 
 /**
  * @element report-summary
@@ -58,6 +59,7 @@ export class ReportSummary extends LitElement {
             >${entryRecord.entry.content}</span
           >
         </div>
+        <endorse-button .reportHash=${this.reportHash}></endorse-button>
       </div>
     `;
   }

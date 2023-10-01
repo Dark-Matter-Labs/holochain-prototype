@@ -34,6 +34,7 @@ import { stewardshipStoreContext } from '../context.js';
 import { StewardshipStore } from '../stewardship-store.js';
 import { Actant } from '../types.js';
 
+
 /**
  * @element create-actant
  * @fires actant-created: detail will contain { actantHash }

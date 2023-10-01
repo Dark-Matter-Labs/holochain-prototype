@@ -33,6 +33,8 @@ import { repeat } from 'lit/directives/repeat.js';
 import { stewardshipStoreContext } from '../context.js';
 import { StewardshipStore } from '../stewardship-store.js';
 import { Report } from '../types.js';
+import './actant-select.js';
+import { ActantSelect } from './actant-select.js';
 
 /**
  * @element create-report
@@ -41,9 +43,6 @@ import { Report } from '../types.js';
 @localized()
 @customElement('create-report')
 export class CreateReport extends LitElement {
-  // REQUIRED. The actant hash for this Report
-  @property(hashProperty('actant-hash'))
-  actantHash!: ActionHash;
 
   // REQUIRED. The clause hash for this Report
   @property(hashProperty('clause-hash'))
@@ -67,20 +66,25 @@ export class CreateReport extends LitElement {
   @query('#create-form')
   form!: HTMLFormElement;
 
+  @query('#actant-select')
+  actantSelect!: ActantSelect;
+
+
   async createReport(fields: any) {
-    if (this.actantHash === undefined)
-      throw new Error(
-        'Cannot create a new Report without its actant_hash field'
-      );
     if (this.clauseHash === undefined)
       throw new Error(
         'Cannot create a new Report without its clause_hash field'
       );
-
+    const actantHash = this.actantSelect.getValue()
+    console.log("ACA", actantHash)
+    if (!actantHash) {
+      console.log("no actant!")
+      return
+    }
     const report: Report = {
       report_type: fields.report_type,
       content: fields.content,
-      actant_hash: this.actantHash,
+      actant_hash: actantHash,
       clause_hash: this.clauseHash,
     };
 
@@ -100,6 +104,7 @@ export class CreateReport extends LitElement {
       );
 
       this.form.reset();
+      this.actantSelect.reset()
     } catch (e: any) {
       console.error(e);
       notifyError(msg('Error creating the report'));
@@ -131,6 +136,13 @@ export class CreateReport extends LitElement {
             required
           ></sl-textarea>
         </div>
+
+        <div style="margin-bottom: 16px;">
+          <actant-select
+            id="actant-select"
+            name="actant"
+          ></actant-select>
+        </div>        
 
         <sl-button variant="primary" type="submit" .loading=${this.committing}
           >${msg('Create Report')}</sl-button

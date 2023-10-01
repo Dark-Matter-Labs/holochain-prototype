@@ -2,6 +2,7 @@ use hdi::prelude::*;
 #[hdk_entry_helper]
 #[derive(Clone, PartialEq)]
 pub struct Clause {
+    pub title: String,
     pub statement: String,
     pub right_holders: Vec<ActionHash>,
     pub responsibilty_holders: Vec<ActionHash>,
@@ -16,11 +17,9 @@ pub fn validate_create_clause(
             .entry()
             .to_app_option()
             .map_err(|e| wasm_error!(e))?
-            .ok_or(
-                wasm_error!(
-                    WasmErrorInner::Guest(String::from("Dependant action must be accompanied by an entry"))
-                ),
-            )?;
+            .ok_or(wasm_error!(WasmErrorInner::Guest(String::from(
+                "Dependant action must be accompanied by an entry"
+            ))))?;
     }
     Ok(ValidateCallbackResult::Valid)
 }
@@ -30,7 +29,9 @@ pub fn validate_update_clause(
     _original_action: EntryCreationAction,
     _original_clause: Clause,
 ) -> ExternResult<ValidateCallbackResult> {
-    Ok(ValidateCallbackResult::Invalid(String::from("Clauses cannot be updated")))
+    Ok(ValidateCallbackResult::Invalid(String::from(
+        "Clauses cannot be updated",
+    )))
 }
 pub fn validate_delete_clause(
     _action: Delete,
@@ -51,22 +52,18 @@ pub fn validate_create_link_actant_to_clauses(
         .entry()
         .to_app_option()
         .map_err(|e| wasm_error!(e))?
-        .ok_or(
-            wasm_error!(
-                WasmErrorInner::Guest(String::from("Linked action must reference an entry"))
-            ),
-        )?;
+        .ok_or(wasm_error!(WasmErrorInner::Guest(String::from(
+            "Linked action must reference an entry"
+        ))))?;
     let action_hash = ActionHash::from(target_address);
     let record = must_get_valid_record(action_hash)?;
     let _clause: crate::Clause = record
         .entry()
         .to_app_option()
         .map_err(|e| wasm_error!(e))?
-        .ok_or(
-            wasm_error!(
-                WasmErrorInner::Guest(String::from("Linked action must reference an entry"))
-            ),
-        )?;
+        .ok_or(wasm_error!(WasmErrorInner::Guest(String::from(
+            "Linked action must reference an entry"
+        ))))?;
     Ok(ValidateCallbackResult::Valid)
 }
 pub fn validate_delete_link_actant_to_clauses(
@@ -76,11 +73,9 @@ pub fn validate_delete_link_actant_to_clauses(
     _target: AnyLinkableHash,
     _tag: LinkTag,
 ) -> ExternResult<ValidateCallbackResult> {
-    Ok(
-        ValidateCallbackResult::Invalid(
-            String::from("ActantToClauses links cannot be deleted"),
-        ),
-    )
+    Ok(ValidateCallbackResult::Invalid(String::from(
+        "ActantToClauses links cannot be deleted",
+    )))
 }
 pub fn validate_create_link_all_clauses(
     _action: CreateLink,
@@ -94,11 +89,9 @@ pub fn validate_create_link_all_clauses(
         .entry()
         .to_app_option()
         .map_err(|e| wasm_error!(e))?
-        .ok_or(
-            wasm_error!(
-                WasmErrorInner::Guest(String::from("Linked action must reference an entry"))
-            ),
-        )?;
+        .ok_or(wasm_error!(WasmErrorInner::Guest(String::from(
+            "Linked action must reference an entry"
+        ))))?;
     Ok(ValidateCallbackResult::Valid)
 }
 pub fn validate_delete_link_all_clauses(
@@ -108,9 +101,7 @@ pub fn validate_delete_link_all_clauses(
     _target: AnyLinkableHash,
     _tag: LinkTag,
 ) -> ExternResult<ValidateCallbackResult> {
-    Ok(
-        ValidateCallbackResult::Invalid(
-            String::from("AllClauses links cannot be deleted"),
-        ),
-    )
+    Ok(ValidateCallbackResult::Invalid(String::from(
+        "AllClauses links cannot be deleted",
+    )))
 }

@@ -53,6 +53,8 @@ export interface Actant {
 }
 
 export interface Clause {
+  title: string;
+
   statement: string;
 
   right_holders: Array<ActionHash>;

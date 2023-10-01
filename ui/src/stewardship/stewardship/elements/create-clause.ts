@@ -98,6 +98,7 @@ export class CreateClause extends LitElement {
       this.selectedResponsibilityHolders
     ).map(hashStr => decodeHashFromBase64(hashStr));
     const clause: Clause = {
+      title: fields.title,
       statement: fields.statement,
       right_holders,
       responsibilty_holders,
@@ -205,6 +206,13 @@ export class CreateClause extends LitElement {
         style="display: flex; flex: 1; flex-direction: column;"
         ${onSubmit(fields => this.createClause(fields))}
       >
+        <div style="margin-bottom: 16px;">
+          <sl-textarea
+            name="title"
+            .label=${msg('Title')}
+            required
+          ></sl-textarea>
+        </div>
         <div style="margin-bottom: 16px;">
           <sl-textarea
             name="statement"

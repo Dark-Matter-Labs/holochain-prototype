@@ -2,8 +2,7 @@ import { notifyError, sharedStyles } from '@holochain-open-dev/elements';
 import '@holochain-open-dev/elements/dist/elements/display-error.js';
 import '@holochain-open-dev/profiles/dist/elements/agent-avatar.js';
 import { toPromise } from '@holochain-open-dev/stores';
-import { EntryRecord } from '@holochain-open-dev/utils';
-import { ActionHash } from '@holochain/client';
+import { ActionHash, encodeHashToBase64 } from '@holochain/client';
 import { consume } from '@lit-labs/context';
 import { localized, msg } from '@lit/localize';
 import '@shoelace-style/shoelace/dist/components/alert/alert.js';
@@ -16,7 +15,6 @@ import { customElement, state } from 'lit/decorators.js';
 
 import { stewardshipStoreContext } from '../context.js';
 import { StewardshipStore } from '../stewardship-store.js';
-import { Clause } from '../types.js';
 
 /**
  * @element csv-exporter
@@ -33,22 +31,6 @@ export class CsvExporter extends LitElement {
   @state()
   isBusy = false;
 
-  download(filename: string, text: string) {
-    const element = document.createElement('a');
-    element.setAttribute(
-      'href',
-      `data:text/plain;charset=utf-8,${encodeURIComponent(text)}`
-    );
-    element.setAttribute('download', filename);
-
-    element.style.display = 'none';
-    document.body.appendChild(element);
-
-    element.click();
-
-    document.body.removeChild(element);
-  }
-
   async getJoinedActantNames(hashes: ActionHash[]) {
     const proms = hashes.map(async hash => {
       const record = await toPromise(this.stewardshipStore.actants.get(hash));
@@ -58,34 +40,87 @@ export class CsvExporter extends LitElement {
     return names.join(',');
   }
 
-  async exportClauses() {
+  async getRecords() {
+    const actantRecordsProm = toPromise(this.stewardshipStore.allActants).then(
+      hashes =>
+        Promise.all(
+          hashes.map(hash => toPromise(this.stewardshipStore.actants.get(hash)))
+        )
+    );
+
+    const clauseRecordsProm = toPromise(this.stewardshipStore.allClauses).then(
+      hashes =>
+        Promise.all(
+          hashes.map(hash => toPromise(this.stewardshipStore.clauses.get(hash)))
+        )
+    );
+
+    const actantRecords = await actantRecordsProm;
+    const clauseRecords = await clauseRecordsProm;
+    return { actantRecords, clauseRecords };
+  }
+
+  async exportEntries() {
     this.isBusy = true;
     try {
-      const clauseHashes = await toPromise(this.stewardshipStore.allClauses);
+      const { actantRecords, clauseRecords } = await this.getRecords();
 
-      const clauseRecordPromises = clauseHashes.map(hash =>
-        toPromise(this.stewardshipStore.clauses.get(hash))
-      );
-      const records = await Promise.all(clauseRecordPromises);
+      const entries: string[][] = [];
+      for (const actantRecord of actantRecords) {
+        if (actantRecord) {
+          entries.push(['Actant', actantRecord.entry.name]);
+        }
+      }
+      for (const clauseRecord of clauseRecords) {
+        if (clauseRecord) {
+          entries.push(['Clause', clauseRecord.entry.title]);
+        }
+      }
 
-      const headers = [
-        'Title',
-        'Statement',
-        'Right Holders',
-        'Responsibility Holders',
-      ];
-      const entryProms = records
-        .filter(
-          (x: EntryRecord<Clause> | undefined): x is EntryRecord<Clause> => !!x
-        )
-        .map(async record => [
-          record.entry.title,
-          record.entry.statement,
-          await this.getJoinedActantNames(record.entry.right_holders),
-          await this.getJoinedActantNames(record.entry.responsibilty_holders),
-        ]);
-      const rows = [headers, ...(await Promise.all(entryProms))];
-      const csvStr = toCsvString(rows);
+      const headers = ['Type', 'Label'];
+      const csvStr = toCsvString([headers, ...entries]);
+      await navigator.clipboard.writeText(csvStr);
+    } catch (e: any) {
+      notifyError(msg('Error exporting csv'));
+      console.error(e);
+    }
+    this.isBusy = false;
+  }
+
+  async exportEdges() {
+    this.isBusy = true;
+    try {
+      const { actantRecords, clauseRecords } = await this.getRecords();
+
+      // TODO: protect against duplicate names?
+      const hashToName: { [hash: string]: string } = {};
+      for (const actantRecord of actantRecords) {
+        if (actantRecord) {
+          hashToName[encodeHashToBase64(actantRecord.actionHash)] =
+            actantRecord.entry.name;
+        }
+      }
+
+      const entries: string[][] = [];
+      for (const clauseRecord of clauseRecords) {
+        if (clauseRecord) {
+          for (const actant of clauseRecord.entry.right_holders) {
+            entries.push([
+              clauseRecord.entry.title,
+              hashToName[encodeHashToBase64(actant)],
+            ]);
+          }
+          for (const actant of clauseRecord.entry.responsibilty_holders) {
+            entries.push([
+              hashToName[encodeHashToBase64(actant)],
+              clauseRecord.entry.title,
+            ]);
+          }
+        }
+      }
+
+      const headers = ['From', 'To'];
+      const csvStr = toCsvString([headers, ...entries]);
       await navigator.clipboard.writeText(csvStr);
     } catch (e: any) {
       notifyError(msg('Error exporting csv'));
@@ -97,10 +132,13 @@ export class CsvExporter extends LitElement {
   render() {
     return html`<sl-card>
       <div
-        style="display: flex; flex: 1; align-items: center; justify-content: center"
+        style="display: flex; flex: 1; gap: 10px; align-items: center; justify-content: center"
       >
-        <sl-button @click=${this.exportClauses} .disable=${this.isBusy}
-          >Copy Clauses CSV</sl-button
+        <sl-button @click=${this.exportEntries} .disable=${this.isBusy}
+          >Copy graph nodes CSV</sl-button
+        >
+        <sl-button @click=${this.exportEdges} .disable=${this.isBusy}
+          >Copy graph edges CSV</sl-button
         >
       </div>
     </sl-card>`;
